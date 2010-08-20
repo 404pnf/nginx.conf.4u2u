@@ -1,0 +1,53 @@
+    server {
+	listen 8888;
+	server_name  u.2u4u.com.cn;
+	root  /var/www/html/ucenter/;
+        #autoindex on;
+
+	location / {
+	proxy_pass       http://apache;
+        proxy_set_header  X-Real-IP  $remote_addr;
+        proxy_set_header Host $http_host;
+
+
+	# fastcgi代理
+          #fastcgi_pass    127.0.0.1:9000;
+          #fastcgi_index   index.php;
+          #fastcgi_param   SCRIPT_FILENAME $document_root$fastcgi_script_name;
+          #include         fastcgi_params;
+
+          # fastcgi缓存
+          #fastcgi_cache         phpcache;
+          #fastcgi_cache_valid   200 1h;
+          #fastcgi_cache_valid   301 302 1h;
+          #fastcgi_cache_valid   any 1m;
+          #fastcgi_cache_key     127.0.0.1:9000$request_uri;
+
+	}
+
+	location ~* \.php$ {
+	proxy_pass http://apache;
+	proxy_set_header  X-Real-IP  $remote_addr;
+        proxy_set_header Host $http_host;
+
+	# fastcgi代理
+          #fastcgi_pass    127.0.0.1:9000;
+          #fastcgi_index   index.php;
+          #fastcgi_param   SCRIPT_FILENAME $document_root$fastcgi_script_name;
+          #include         fastcgi_params;
+
+          # fastcgi缓存
+          #fastcgi_cache         phpcache;
+          #fastcgi_cache_valid   200 1h;
+          #fastcgi_cache_valid   301 302 1h;
+          #fastcgi_cache_valid   any 1m;
+          #fastcgi_cache_key     127.0.0.1:9000$request_uri; 
+	}
+
+        location ~* .+\.(ico|jpg|gif|jpeg|css|js|flv|png|swf)$ {
+         expires max;
+         proxy_cache cache;
+         proxy_cache_key $host$uri#is_args$args;
+        }
+
+    }
