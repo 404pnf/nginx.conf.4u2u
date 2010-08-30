@@ -1,9 +1,22 @@
   server {
         #limit_conn   gulag 10;
 	listen	      80;
-        server_name   2u4u.com.cn ; #bxy separate domain names with a space
+        server_name   shop.2u4u.com.cn:7788 shop.2u4u.com.cn;
+	# before, when i was young, 
+	# this redirect works but it's pretty bad since it involves if statement
+	# ref: http://wiki.nginx.org/Pitfalls 
+	#if ($host ~* shop.2u4u.com.cn ) {
+  	#rewrite ^(.*)$ http://shop.2u4u.com.cn:7788$1 ; # $1 contains '/foo', not 'www.mydomain.com/foo'
+	#}
         root         /var/www/html/2u4u/;
         index        index.php index.html;
+
+    location ~ ^/download/.*$  {
+    rewrite ^ http://shop.2u4u.com.cn:7788$request_uri?;
+    proxy_pass http://apache; # or whatever you need to get to apache with the port specified
+    proxy_set_header  X-Real-IP  $remote_addr;
+    proxy_set_header Host $http_host;
+    }
 
     ## Deny some crawlers
     if ($http_user_agent ~* (HTTrack|HTMLParser|libwww) ) {
@@ -13,10 +26,10 @@
       if ($http_referer ~* (poker|sex|girl) ) {
         return 444;
     }
-    ## www. redirect
-    #if ($host ~* ^(www\.)(.+)) {
-        #set $rawdomain $2;
-        #rewrite ^/(.*)$  http://$rawdomain/$1 permanent;
+    ## www. redirect  
+    ##if ($host ~* ^(www\.)(.+)) {
+        ##set $rawdomain $2;
+        ##rewrite ^/(.*)$  http://$rawdomain/$1 permanent;
     #}
     
     ## 6.x starts
@@ -121,11 +134,11 @@
 
     location ~* /(system/files/)|(files/imagecache)|(fckeditor)|(ckeditor)/ {
         access_log         off;
-        expires            30d;
+        expires            max;
         try_files $uri @drupal; ### imagecache and (f)ckeditor support
     }
 
-    location ~* ^.+\.(jpg|jpeg|gif|png|ico)$ {
+    location ~* ^.+\.(jpg|jpeg|gif|png|ico|swf)$ {
         access_log      off;
         expires         max;
         try_files $uri =404;
@@ -164,37 +177,5 @@
         default_type application/rss+xml;
         try_files /cache/normal/$host${uri}_.xml /cache/normal/$host${uri}_.html /cache/$host${uri}_.xml $uri @drupal;
     }
-	
-    location /zhuanti {
-	index index.html;
-	#autoindex on;
-	}
-    location /guanlisjk {
-	#auth_basic "show me who you are";
-	#auth_basic_user_file passwd/htpasswd;
-	proxy_pass http://apache;
-	index index.php;
-        }
 
-     location ~ ^/guanlsjk.+\.php$ {
-        #root /var/www/html/2u4u;
-	proxy_pass http://apache;
-        }
-
-    location /sites/2u4u.com.cn/tongji/ {
-	# add index so user don't have to type index.html in that directory
-	index index.html;
-	}
-    location ~* /games/* {
-	#proxy_pass http://apache;
-   	# the rewrite works!
-	# need to rewrite this to 7788
-	# if we run php-fpm, the proxy_pass probably will work
-    	rewrite ^ http://2u4u.com.cn:7788$request_uri?;
-	index index.html index.php;
-	}
-
-    location /cacti {
-	proxy_pass http://apache;
-	}
   } # end of server
