@@ -2,3 +2,5 @@
 vhost/bak/*
 bak/*
 *.swp
+passwd/mima
+passwd/htpasswd
