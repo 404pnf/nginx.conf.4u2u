@@ -1,7 +1,7 @@
   server {
         #limit_conn   gulag 10;
 	listen	      80;
-        server_name   quiz.2u4u.com.cn;
+        server_name   video.2u4u.com.cn;
         root         /var/www/html/2u4u/;
         index        index.php index.html;
 
@@ -14,9 +14,9 @@
         return 444;
     }
     ## www. redirect  
-    ##if ($host ~* ^(www\.)(.+)) {
-        ##set $rawdomain $2;
-        ##rewrite ^/(.*)$  http://$rawdomain/$1 permanent;
+    #if ($host ~* ^(www\.)(.+)) {
+        #set $rawdomain $2;
+        #rewrite ^/(.*)$  http://$rawdomain/$1 permanent;
     #}
     
     ## 6.x starts
@@ -61,15 +61,14 @@
     location ~ \.php$ {
           try_files $uri @drupal;       ### check for existence of php file
 	  #index index.php
-	  proxy_pass       http://apache;
-          proxy_set_header  X-Real-IP  $remote_addr;
-          proxy_set_header Host $http_host;
+	  #proxy_pass       http://apache;
+          #proxy_set_header  X-Real-IP  $remote_addr;
+          #proxy_set_header Host $http_host;
 	
-	  #fastcgi_pass    127.0.0.1:9000; 
-	  # make sure php-cgi is running at /home/apache/apps/spawn-php
-  	  #fastcgi_index   index.php;
-  	  #fastcgi_param   SCRIPT_FILENAME $document_root$fastcgi_script_name;
-          #include         fastcgi_params;
+	  fastcgi_pass    127.0.0.1:9000; 
+  	  fastcgi_index   index.php;
+  	  fastcgi_param   SCRIPT_FILENAME $document_root$fastcgi_script_name;
+          include         fastcgi_params;
     }
 
     location ~ \.css$ {
@@ -121,11 +120,19 @@
 
     location ~* /(system/files/)|(files/imagecache)|(fckeditor)|(ckeditor)/ {
         access_log         off;
-        expires            max;
+        expires            30d;
         try_files $uri @drupal; ### imagecache and (f)ckeditor support
     }
 
-    location ~* ^.+\.(jpg|jpeg|gif|png|ico|swf)$ {
+    location ~* ^.+\.(jpg|jpeg|gif|png|ico)$ {
+        access_log      off;
+        expires         max;
+        try_files $uri =404;
+    }
+
+    # static files in modules should have long expires time
+    # e.g FlowPlayerClassic.swf in the flowplayer module
+    location ~* /modules/standard/ {
         access_log      off;
         expires         max;
         try_files $uri =404;
@@ -165,32 +172,23 @@
         try_files /cache/normal/$host${uri}_.xml /cache/normal/$host${uri}_.html /cache/$host${uri}_.xml $uri @drupal;
     }
 
-
-  location ~* /xcache-admin {
-	  # proxy it to fasctcig since all 2u4u.suddomains are using php-fpm
-          fastcgi_pass    127.0.0.1:9000;
-          fastcgi_index   index.php;
-          fastcgi_param   SCRIPT_FILENAME $document_root$fastcgi_script_name;
-          include         fastcgi_params;
-        }
-
-  location ~* /admin {
-    #auth_basic "Restricted Area";
-    #auth_basic_user_file passwd/htpasswd;
-	#allow 218.247.244.23;
-	#allow 218.247.244.25;
-	#deny  all;
+ location ~* /admin {
+    auth_basic "Restricted Area";
+    auth_basic_user_file passwd/htpasswd;
+        #allow 218.247.244.23;
+        #allow 218.247.244.25;
+        #deny  all;
         try_files $uri @cache;
-	}
+        }
 
   # internal pages are protected with a simple htpasswd
   location = /install.php {
     auth_basic "Restricted Area";
     auth_basic_user_file passwd/htpasswd;
-	allow 218.247.244.23;
-	allow 218.247.244.25;
-	deny  all;
-    	#try_files $uri @cache;
+        allow 218.247.244.23;
+        allow 218.247.244.25;
+        deny  all;
+        #try_files $uri @cache;
           fastcgi_pass    127.0.0.1:9000;
           fastcgi_index   index.php;
           fastcgi_param   SCRIPT_FILENAME $document_root$fastcgi_script_name;
@@ -201,10 +199,10 @@
   location = /update.php {
     auth_basic "Restricted Area";
     auth_basic_user_file passwd/htpasswd;
-	allow 218.247.244.23;
-	allow 218.247.244.25;
-	deny  all;
-    	#try_files $uri @cache;
+        allow 218.247.244.23;
+        allow 218.247.244.25;
+        deny  all;
+        #try_files $uri @cache;
           fastcgi_pass    127.0.0.1:9000;
           fastcgi_index   index.php;
           fastcgi_param   SCRIPT_FILENAME $document_root$fastcgi_script_name;
